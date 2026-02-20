@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  imdb-app:
+    build: .
+    ports:
+      - "8765:8765"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
