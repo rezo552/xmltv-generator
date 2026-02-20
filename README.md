@@ -2,10 +2,6 @@
 
 This is a small Flask webapp with a REST API to download IMDB charts (Top 250, Most Popular Movies).
 
-## Endpoints
-
-- `/api/imdb/top250` — Returns IMDB Top 250 movies as JSON
-- `/api/imdb/popular` — Returns IMDB Most Popular movies as JSON
 # XMLTV Generator
 
 A Flask-based REST API to generate an XMLTV EPG (Electronic Program Guide) from MDB lists, enriched with TMDb movie data. Supports multi-channel, multi-language guides, daily caching, and Docker deployment.
@@ -45,7 +41,18 @@ A Flask-based REST API to generate an XMLTV EPG (Electronic Program Guide) from 
    cp .env.example .env
    # Edit .env and set MDB_API_KEY and TMDB_API_KEY
    ```
-5. Configure your MDB lists in `mdb_lists.cfg` (one per line, format: `username/listname`).
+
+5. Configure your MDB lists in `mdb_lists.cfg`:
+   - Each line should be in the format: `username/listname`
+   - Lines starting with `#` are ignored as comments
+   - Each entry creates a separate channel in the XMLTV output
+
+### Example mdb_lists.cfg
+```
+# Example list configuration
+user1/favorites
+user2/top-movies
+```
 
 ## Running
 ### Locally
