@@ -9,4 +9,6 @@ services:
       - MDB_API_KEY=${MDB_API_KEY}
       - TMDB_API_KEY=${TMDB_API_KEY}
     restart: unless-stopped
+    volumes:
+      - ./mdb_lists.cfg:/app/mdb_lists.cfg:ro
 
