@@ -22,13 +22,20 @@ TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
 
 
 def read_mdb_lists_config():
+    import csv
     lists = []
     try:
-        with open('mdb_lists.cfg', 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#'):
-                    lists.append(line)
+        with open('mdb_lists.cfg', 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if not row or row[0].startswith('#'):
+                    continue
+                if len(row) < 2:
+                    continue
+                username_list = row[0].strip()
+                display_name = row[1].strip()
+                if username_list and display_name:
+                    lists.append((username_list, display_name))
     except Exception:
         pass
     return lists
@@ -67,13 +74,13 @@ def get_mdb_xmltv():
     xmltv = ['<?xml version="1.0" encoding="UTF-8"?>', '<tv generator-info-name="torrent TV">']
     channel_elements = []
     programme_elements = []
-    for list_entry in lists:
-        if '/' not in list_entry:
+    for username_list, display_name in lists:
+        if '/' not in username_list:
             continue
-        username, listname = list_entry.split('/', 1)
+        username, listname = username_list.split('/', 1)
         mdb_movies = fetch_mdb_list_movies(username, listname)
         channel_id = listname
-        channel_elements.append(f'<channel id="{channel_id}"><display-name>{channel_id}</display-name></channel>')
+        channel_elements.append(f'<channel id="{channel_id}"><display-name>{html.escape(display_name)}</display-name></channel>')
         current_time = start_time
         random_movies = mdb_movies[:]
         random.shuffle(random_movies)
