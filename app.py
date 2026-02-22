@@ -2,6 +2,7 @@
 import html
 from threading import Lock
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -50,14 +51,34 @@ def fetch_mdb_list_movies(username, listname):
         return response.json().get('movies', [])
     return []
 
-def fetch_tmdb_movie_info(tmdb_id, lang='hu'):
+def fetch_tmdb_movie_info(tmdb_id, lang='hu', imdb_id=None):
+    # Use IMDB ID for cache key if available
+    cache_key = imdb_id or tmdb_id
+    cache_dir = os.path.join(os.path.dirname(__file__), 'cache')
+    os.makedirs(cache_dir, exist_ok=True)
+    cache_file = os.path.join(cache_dir, f'{lang}_{cache_key}.json')
+    # Try to load from cache
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    # Fetch from TMDb
     url = f'https://api.themoviedb.org/3/movie/{tmdb_id}'
     params = {'api_key': TMDB_API_KEY, 'language': lang}
     print(f"TMDb API Query: {url} params={params}", flush=True)
     response = requests.get(url, params=params)
     print(f"TMDb API Response: {response.status_code} {response.text[:500]}", flush=True)
     if response.status_code == 200:
-        return response.json()
+        data = response.json()
+        # Save to cache
+        try:
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False)
+        except Exception:
+            pass
+        return data
     return {}
 
 
@@ -88,8 +109,8 @@ def get_mdb_xmltv():
             tmdb_id = movie.get('ids', {}).get('tmdb')
             print(f"Fetching TMDb ID: {tmdb_id}", flush=True)
             imdb_id = movie.get('imdb') or movie.get('imdb_id')
-            # Always fetch info from TMDb using tmdb_id and lang
-            tmdb_info = fetch_tmdb_movie_info(tmdb_id, lang) if tmdb_id else {}
+            # Fetch info from cache or TMDb using tmdb_id, lang, and imdb_id
+            tmdb_info = fetch_tmdb_movie_info(tmdb_id, lang, imdb_id) if tmdb_id else {}
             print(f"TMDb Info: {tmdb_info}", flush=True)
             runtime = tmdb_info.get('runtime') or movie.get('runtime') or 120
             local_title = tmdb_info.get('title') or tmdb_info.get('original_title') or movie.get('title', '')
