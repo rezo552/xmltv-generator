@@ -54,6 +54,22 @@ user1/favorites
 user2/top-movies
 ```
 
+### Channel logos
+Each channel gets an `<icon>` in the XMLTV if a logo exists, served by the app under `/logos/`:
+- default file: `logos/<channel id>.png` (the channel id is the list name, e.g. `logos/top-movies.png`)
+- or an optional third column in `mdb_lists.cfg`: a file name in `logos/` or a full `http(s)://` URL
+  ```
+  user1/favorites,Favourites,favourites.png
+  user2/top-movies,Top Movies,https://example.com/top.png
+  ```
+- `LOGO_BASE_URL` sets the address used in the logo links, e.g. `http://192.168.1.10:8765` (default: the host the guide was requested from)
+
+`tools/make_logos.py` generates simple logos for all configured channels (a symbol picked from the channel name, or its initials):
+```sh
+pip install pillow   # also needs the DejaVu fonts, e.g. apt install fonts-dejavu-core
+python tools/make_logos.py mdb_lists.cfg logos
+```
+
 ## Running
 ### Locally
 ```sh
@@ -80,6 +96,7 @@ Returns: XMLTV EPG for all configured MDB lists as channels.
 Set these in your `.env` file:
 - `MDB_API_KEY` — Your MDB API key
 - `TMDB_API_KEY` — Your TMDb API key
+- `LOGO_BASE_URL` — (optional) public address used in channel logo links
 
 ## Notes
 - The EPG is cached in memory and refreshed daily after midnight.

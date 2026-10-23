@@ -9,9 +9,10 @@ load_dotenv()
 xmltv_cache = {'date': None, 'lang': None, 'xmltv': None}
 xmltv_cache_lock = Lock()
 
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request, Response, send_from_directory
 import requests
 import random
+import urllib.parse
 from datetime import datetime, timedelta
 
 
@@ -20,6 +21,14 @@ app = Flask(__name__)
 # MDB and TMDb API keys from environment variables
 MDB_API_KEY = os.environ.get('MDB_API_KEY')
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
+
+# Channel logos: logos/<channel id>.png (or the file/URL in the 3rd column of mdb_lists.cfg)
+LOGO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logos')
+# Public base URL for logo links, e.g. http://192.168.1.10:8765 (default: the request host)
+LOGO_BASE_URL = os.environ.get('LOGO_BASE_URL', '').rstrip('/')
+# The cached XMLTV contains this placeholder, replaced per request, so every client gets
+# the same (randomly shuffled) schedule no matter which host name it used
+LOGO_BASE_PLACEHOLDER = '__LOGO_BASE_URL__'
 
 
 def read_mdb_lists_config():
@@ -35,11 +44,29 @@ def read_mdb_lists_config():
                     continue
                 username_list = row[0].strip()
                 display_name = row[1].strip()
+                logo = row[2].strip() if len(row) > 2 else ''
                 if username_list and display_name:
-                    lists.append((username_list, display_name))
+                    lists.append((username_list, display_name, logo))
     except Exception:
         pass
     return lists
+
+def channel_logo_url(channel_id, logo):
+    if logo.startswith(('http://', 'https://')):
+        return logo
+    filename = logo or f'{channel_id}.png'
+    if not os.path.isfile(os.path.join(LOGO_DIR, filename)):
+        return None
+    return f'{LOGO_BASE_PLACEHOLDER}/logos/{urllib.parse.quote(filename)}'
+
+def xmltv_response(xmltv_str):
+    logo_base = LOGO_BASE_URL or request.host_url.rstrip('/')
+    return Response(xmltv_str.replace(LOGO_BASE_PLACEHOLDER, html.escape(logo_base)), mimetype='application/xml')
+
+
+@app.route('/logos/<path:filename>', methods=['GET'])
+def get_logo(filename):
+    return send_from_directory(LOGO_DIR, filename)
 
 def fetch_mdb_list_movies(username, listname):
     url = f'https://api.mdblist.com/lists/{username}/{listname}/items'
@@ -89,19 +116,21 @@ def get_mdb_xmltv():
     with xmltv_cache_lock:
         if xmltv_cache['date'] == today and xmltv_cache['lang'] == lang and xmltv_cache['xmltv']:
             print("Serving XMLTV from cache", flush=True)
-            return Response(xmltv_cache['xmltv'], mimetype='application/xml')
+            return xmltv_response(xmltv_cache['xmltv'])
     lists = read_mdb_lists_config()
     start_time = datetime.now().replace(second=0, microsecond=0)
     xmltv = ['<?xml version="1.0" encoding="UTF-8"?>', '<tv generator-info-name="torrent TV">']
     channel_elements = []
     programme_elements = []
-    for username_list, display_name in lists:
+    for username_list, display_name, logo in lists:
         if '/' not in username_list:
             continue
         username, listname = username_list.split('/', 1)
         mdb_movies = fetch_mdb_list_movies(username, listname)
         channel_id = listname
-        channel_elements.append(f'<channel id="{channel_id}"><display-name>{html.escape(display_name)}</display-name></channel>')
+        logo_url = channel_logo_url(channel_id, logo)
+        icon = f'<icon src="{html.escape(logo_url)}"/>' if logo_url else ''
+        channel_elements.append(f'<channel id="{channel_id}"><display-name>{html.escape(display_name)}</display-name>{icon}</channel>')
         current_time = start_time
         random_movies = mdb_movies[:]
         random.shuffle(random_movies)
@@ -137,7 +166,7 @@ def get_mdb_xmltv():
         xmltv_cache['date'] = today
         xmltv_cache['lang'] = lang
         xmltv_cache['xmltv'] = xmltv_str
-    return Response(xmltv_str, mimetype='application/xml')
+    return xmltv_response(xmltv_str)
 
 if __name__ == '__main__':
     app.run(debug=True, port=8765, host='0.0.0.0')

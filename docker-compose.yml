@@ -8,7 +8,9 @@ services:
       - PYTHONUNBUFFERED=1
       - MDB_API_KEY=${MDB_API_KEY}
       - TMDB_API_KEY=${TMDB_API_KEY}
+      - LOGO_BASE_URL=${LOGO_BASE_URL:-}
     restart: unless-stopped
     volumes:
       - ./mdb_lists.cfg:/app/mdb_lists.cfg:ro
+      - ./logos:/app/logos:ro
 
