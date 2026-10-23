@@ -8,7 +8,8 @@ A Flask-based REST API to generate an XMLTV EPG (Electronic Program Guide) from 
 
 ## Features
 - Fetches movie lists from MDB (mdblist.com)
-- Enriches movie data with TMDb (themoviedb.org) for localized titles, descriptions, runtime, and ratings
+- Enriches movie data with TMDb (themoviedb.org) for localized titles, descriptions, runtime, ratings and movie covers (posters)
+- Channel logos
 - Generates XMLTV EPG for all configured MDB lists as channels
 - Language selection for title and description (via `lang` query param)
 - Daily caching of generated EPG (auto-refreshes after midnight)
@@ -97,6 +98,7 @@ Set these in your `.env` file:
 - `MDB_API_KEY` — Your MDB API key
 - `TMDB_API_KEY` — Your TMDb API key
 - `LOGO_BASE_URL` — (optional) public address used in channel logo links
+- `TMDB_POSTER_SIZE` — (optional) size of the movie covers added to each programme as `<icon>`, one of TMDb's poster sizes: `w92`, `w154`, `w185`, `w342`, `w500` (default), `w780`, `original`
 
 ## Notes
 - The EPG is cached in memory and refreshed daily after midnight.

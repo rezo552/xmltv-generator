@@ -22,6 +22,10 @@ app = Flask(__name__)
 MDB_API_KEY = os.environ.get('MDB_API_KEY')
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
 
+# Movie covers: TMDb poster as the programme <icon>
+TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p'
+TMDB_POSTER_SIZE = os.environ.get('TMDB_POSTER_SIZE', 'w500')  # w92 w154 w185 w342 w500 w780 original
+
 # Channel logos: logos/<channel id>.png (or the file/URL in the 3rd column of mdb_lists.cfg)
 LOGO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logos')
 # Public base URL for logo links, e.g. http://192.168.1.10:8765 (default: the request host)
@@ -154,6 +158,9 @@ def get_mdb_xmltv():
             programme_elements.append(f'<programme start="{prog_start.strftime("%Y%m%d%H%M%S")} +0100" stop="{prog_end.strftime("%Y%m%d%H%M%S")} +0100" channel="{channel_id}">')
             programme_elements.append(f'  <title lang="{lang}">{local_title}</title>')
             programme_elements.append(f'  <desc lang="{lang}">{desc}</desc>')
+            poster_path = tmdb_info.get('poster_path')
+            if poster_path:
+                programme_elements.append(f'  <icon src="{TMDB_IMAGE_BASE_URL}/{TMDB_POSTER_SIZE}{html.escape(poster_path)}"/>')
             programme_elements.append('</programme>')
             current_time = prog_end
             if prog_end.date() != start_time.date():
