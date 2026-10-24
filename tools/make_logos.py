@@ -24,11 +24,17 @@ PALETTE = [
     ('#e67e22', '#8a4510'), ('#2c3e50', '#0f1720'), ('#c0392b', '#5e1a13'),
     ('#f1c40f', '#9a7b06'), ('#d35400', '#6e2c00'), ('#6c5ce7', '#2d2580'),
     ('#00b894', '#00624e'), ('#fd79a8', '#a33a62'), ('#636e72', '#2d3436'),
-    ('#0984e3', '#043f6e'), ('#b33771', '#5a1b38'),
+    ('#0984e3', '#043f6e'), ('#b33771', '#5a1b38'), ('#e84393', '#7d1d4d'),
+    ('#00cec9', '#006a67'), ('#ff7675', '#a03433'), ('#a29bfe', '#4b43a8'),
+    ('#55efc4', '#11866a'), ('#fdcb6e', '#a17410'),
 ]
 
 # keyword in the display name (lower case) -> candidate symbols, first one the font has wins
 SYMBOLS = [
+    ('romantic', '❤♥'),        # heavy heart, heart
+    ('release', '▶'),               # play
+    ('trending', '↗▲'),        # arrow up-right, triangle
+    ('250', ('250',)),                   # text
     ('weekly', '★'),                # star
     ('top', '★'),
     ('action', '⚡'),                # lightning
@@ -69,6 +75,8 @@ def pick_symbol(display_name, symbol_font):
         if keyword not in name:
             continue
         for symbol in candidates:
+            if len(symbol) > 1:
+                return symbol, None  # text, drawn like the initials
             if has_glyph(symbol_font, symbol):
                 return symbol, symbol_font
     words = [w for w in display_name.replace('+', ' +').split() if w[0].isalnum() or w == '+']
